@@ -40,6 +40,7 @@ namespace ListSerializer.App
             {
                 buffer.Position = 0;
                 var a = serilizer.Serialize(head, buffer);
+                var b = serilizer.Deserialize(buffer);
             }
         }
     }

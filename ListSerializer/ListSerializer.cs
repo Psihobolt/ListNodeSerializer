@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using SerializerTests.Interfaces;
 using SerializerTests.Nodes;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace ListSerializer
 {
@@ -23,13 +25,6 @@ namespace ListSerializer
             public char[]? data;
         }
 
-        private record ListTree
-        {
-            public int id;
-            public ListNode node;
-        }
-
-
         public async Task<ListNode> DeepCopy(ListNode head)
         {
             var list = await ExpandTreeAsync(head);
@@ -45,7 +40,10 @@ namespace ListSerializer
                 using (var stream = new StreamReader(s))
                 using (var reader = new JsonTextReader(stream))
                 {
-                     data = serializer.Deserialize<IEnumerable<SerialiazedObject>>(reader);
+                    s.Position = 0;
+
+                    var str = serializer.Deserialize<string>(reader);
+                    data = JsonConvert.DeserializeObject<List<SerialiazedObject>>(str);
                 }
 
                 return Task.FromResult(ToListNodeData(data));
@@ -63,10 +61,17 @@ namespace ListSerializer
 
                 var data = task.GetAwaiter().GetResult();
 
-                using (var stream = new StreamWriter(s))
+                var str = JsonConvert.SerializeObject(ToSerializeData(data), Formatting.Indented);
+
+                using (var stream = new StreamWriter(s, Encoding.UTF8, str.Length * 2, true))
                 using (JsonTextWriter writer = new JsonTextWriter(stream))
                 {
-                    serializer.Serialize(writer, ToSerializeData(data));
+                    writer.CloseOutput = false;
+
+                    stream.Flush();
+                    s.Position = 0;
+
+                    serializer.Serialize(writer, str);
                 }
             }
 
@@ -95,9 +100,11 @@ namespace ListSerializer
                         id = idx,
                         data = item.Value.Data.ToArray(),
                         prevId = idx > 0 ? idx - 1 : -1,
-                        nextId = idx < count ? idx++ : -1,
+                        nextId = idx < count - 1 ? idx + 1 : -1,
                         random = rnd
                     });
+
+                    idx++;
                 }
                 return result;
             }
@@ -111,18 +118,18 @@ namespace ListSerializer
             var result = data
                 .Select(x=> new { 
                     Key = x.id, 
-                    Value = new ListNode() { Data = x.data?.ToString() }
+                    Value = new ListNode() { Data = new string(x.data) }
                 })
                 .ToDictionary(x=>x.Key, x=>x.Value);
 
             foreach(var item in data)
             {
-                result[item.id].Previous = result[item.prevId];
-                result[item.id].Next = result[item.nextId];
+                result[item.id].Previous = item.prevId != -1 ? result[item.prevId] : null;
+                result[item.id].Next = item.nextId != -1 ? result[item.nextId] : null;
                 result[item.id].Random = result[item.random];
             }
 
-            return result.FirstOrDefault().Value;
+            return result.OrderBy(x=>x.Key).FirstOrDefault().Value;
         }
 
 
@@ -138,7 +145,9 @@ namespace ListSerializer
 
             await Task.WhenAll(tasks);
 
-            IDictionary<int, ListNode> result = tasks[0].Result.Union(tasks[1].Result).ToDictionary(x=>x.Key, x=>x.Value);
+            var offset = tasks[0].Result.Count - 1;
+
+            IDictionary<int, ListNode> result = tasks[0].Result.Union(tasks[1].Result).ToDictionary(x=>x.Key + offset, x=>x.Value);
 
             return result;
         }
