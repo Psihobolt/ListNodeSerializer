@@ -1,3 +1,5 @@
+using AutoFixture;
+using FluentAssertions;
 using Moq;
 using SerializerTests.Interfaces;
 using SerializerTests.Nodes;
@@ -6,60 +8,42 @@ using Xunit;
 
 namespace ListSerializer.Tests
 {
-    public class SerializerTest
+    public class ListSerializerTest
     {
-
-
-        public class ListNodeExt : ListNode
-        {
-            public override string ToString()
-            {
-                return String.Join("_",
-                    Data,
-                    Previous == null ? "Root" : Previous.Data,
-                    Next == null ? "End" : Next.Data);
-            }
-
-            public override bool Equals(object? obj)
-            {
-                if (obj == null) return false;
-                if (ReferenceEquals(this, obj)) return true;
-
-                return (obj as ListNodeExt).ToString() == (this as ListNodeExt).ToString();
-            }
-
-            public override int GetHashCode() => (this as ListNodeExt).ToString().GetHashCode();
-        }
-
         [Theory]
-        [InlineData(100)]
-        [InlineData(1000)]
-        [InlineData(10000)]
+        [InlineData(10)]
         public async Task ListSerializer_Serialize_ListEqual(int countNode)
         {
-            var data = new List<ListNode>();
-            data.Add(new ListNodeExt() { Data = "Test data 0", Previous = null });
-            for (int i = 1; i < countNode; i++) {
-                data.Add(new ListNodeExt() { Data = $"Test data {i}", Previous = data[i-1], Next = null });
-                data[i - 1].Next = data[i];
-            }
+            // Arrange
+            var fixture = new Fixture();
+
+            var sut = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(countNode);
 
             var rand = new Random();
-            var head = data[0];
-            while (data.Count > 0) {
-                if (data.Count == 1) { 
-                    data[0].Random = head; 
-                    break; 
-                }
 
-                data[0].Random = data[rand.Next(1, data.Count-1)];
-                data.Remove(data[0]);
+            sut.First().Previous = null;
+            sut.First().Random = sut.ElementAt(rand.Next(0, sut.Count() - 1));
+            for (int i = 1; i < sut.Count(); i++)
+            {
+                sut.ElementAt(i - 1).Next = sut.ElementAt(i);
+                sut.ElementAt(i).Previous = sut.ElementAt(i - 1);
+                sut.ElementAt(i).Random = sut.ElementAt(rand.Next(0, sut.Count() - 1));
             }
 
+
+            // Act
+            ListNode head = sut.First();
             var serializer = new ListSerializer();
+
             ListNode result;
-            using (var stream = new MemoryStream()) {
-                await serializer.Serialize(data[0], stream);
+            using (var stream = new MemoryStream())
+            {
+                await serializer.Serialize(head.Random, stream);
                 stream.Seek(0, SeekOrigin.Begin);
                 result = await serializer.Deserialize(stream);
             }

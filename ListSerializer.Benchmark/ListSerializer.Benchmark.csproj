@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoFixture" Version="4.18.0" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ListSerializer.Core\ListSerializer.Core.csproj" />
     <ProjectReference Include="..\ListSerializer\ListSerializer.csproj" />
   </ItemGroup>
