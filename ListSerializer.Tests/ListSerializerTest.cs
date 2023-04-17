@@ -1,18 +1,102 @@
 using AutoFixture;
 using FluentAssertions;
-using Moq;
-using SerializerTests.Interfaces;
 using SerializerTests.Nodes;
-using System.Collections.Generic;
-using Xunit;
 
 namespace ListSerializer.Tests
 {
     public class ListSerializerTest
     {
+
+        [Fact]
+        public async Task DeepCopy_SingleNode_SameObject()
+        {
+            // Arrange
+            var fixture = new Fixture();
+
+            var suts = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(2);
+
+            var sut = suts.First();
+
+            sut.Next = suts.Skip(1).First();
+            sut.Random = suts.Skip(1).First();
+            sut.Next.Random = suts.First();
+            sut.Next.Previous = sut;
+
+            var serializer = new ListSerializer();
+
+            // Act
+            var result = await serializer.DeepCopy(sut);
+
+            // Assert
+            result.Data.Should().BeEquivalentTo(sut.Data);
+        }
+
+        [Fact]
+        public async Task DeepCopy_NodeWithNext_SameObject()
+        {
+            // Arrange
+            var fixture = new Fixture();
+
+            var suts = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(2);
+
+            var sut = suts.First();
+
+            sut.Next = suts.Skip(1).First();
+            sut.Random = suts.Skip(1).First();
+            sut.Next.Random = suts.First();
+            sut.Next.Previous = sut;
+
+            var serializer = new ListSerializer();
+
+            // Act
+            var result = await serializer.DeepCopy(sut);
+
+            // Assert
+            result.ToFullString().Should().BeEquivalentTo(sut.ToFullString());
+        }
+
+        [Fact]
+        public async Task DeepCopy_NodeWithNextAndRandom_SameObject()
+        {
+            // Arrange
+            var fixture = new Fixture();
+
+            var suts = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(2);
+
+            var sut = suts.First();
+
+            sut.Next = suts.Skip(1).First();
+            sut.Random = suts.Skip(1).First();
+            sut.Next.Random = suts.First();
+            sut.Next.Previous = sut;
+
+            var serializer = new ListSerializer();
+
+            // Act
+            var result = await serializer.DeepCopy(sut);
+
+            // Assert
+            result.ToFullString().Should().BeEquivalentTo(sut.ToFullString());
+        }
+
         [Theory]
         [InlineData(10)]
-        public async Task ListSerializer_Serialize_ListEqual(int countNode)
+        public async Task ListSerializer_SerializedAndDesialized_ListEqual(int countNode)
         {
             // Arrange
             var fixture = new Fixture();
@@ -48,6 +132,7 @@ namespace ListSerializer.Tests
                 result = await serializer.Deserialize(stream);
             }
 
+            // Assert
             while (result.Next != null || head.Next != null)
             {
                 Assert.Equal(result.Data, head.Data);
@@ -57,6 +142,9 @@ namespace ListSerializer.Tests
                 result = result?.Next;
                 head = head?.Next;
             }
+
+            // Check end list
+            Assert.Equal(result.Next, head.Next);
         }
     }
 }

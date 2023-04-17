@@ -6,7 +6,6 @@ using System.Text.Json;
 
 namespace ListSerializer
 {
-    [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public record SerialiazedObject
     {
@@ -14,7 +13,7 @@ namespace ListSerializer
         public int nextId;
         public int prevId;
         public int random;
-        public char[]? data;
+        public char[] data;
     }
 
     public class ListSerializer : IListSerializer
@@ -38,13 +37,14 @@ namespace ListSerializer
 
         public async Task Serialize(ListNode head, Stream s)
         {
-            s.Flush();
             s.Position = 0;
 
-            var data = head.ExpandTree().ToSerializeData() as List<SerialiazedObject>;
+            var node = await head.ExpandTreeAsync();
+            var data = node.ToSerializeData();
 
             JsonSerializerOptions jsonOption = new() { IncludeFields = true };
             await JsonSerializer.SerializeAsync(s, data, data.GetType(), jsonOption);
+            s.Flush();
         }
     }
 }

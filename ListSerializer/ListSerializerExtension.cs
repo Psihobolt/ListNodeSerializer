@@ -11,14 +11,20 @@ namespace ListSerializer
             Up
         }
 
+        /// <summary>
+        /// Returns a string with the value in the node and the value of the previous and next node
+        /// </summary>
         public static string ToFullString(this ListNode node)
-        {
+        { 
             return String.Join("_",
                 node.Data,
                 node.Previous == null ? "Root" : node.Previous.Data,
                 node.Next == null ? "End" : node.Next.Data);
         }
 
+        /// <summary>
+        /// Returns the dictionary of all elements in a linked list, starting from the list root
+        /// </summary>
         public static async Task<IDictionary<int, ListNode>> ExpandTreeAsync(this ListNode head)
         {
             var list = new ConcurrentDictionary<int, ListNode>();
@@ -36,47 +42,9 @@ namespace ListSerializer
             return list.OrderBy(x=>x.Key).ToDictionary(x => x.Key + offset, x => x.Value);
         }
 
-        public static IDictionary<int, ListNode> ExpandTree(this ListNode head)
-        {
-            Task<IDictionary<int, ListNode>>[] tasks = new Task<IDictionary<int, ListNode>>[2]
-            {
-                new Task<IDictionary<int, ListNode>>(() => head.DirectionExpandTree(Direction.Up)),
-                new Task<IDictionary<int, ListNode>>(() => head.DirectionExpandTree())
-            };
-
-            foreach (var task in tasks) task.Start();
-            Task.WhenAll(tasks);
-
-            var offset = tasks[0].Result.Count();
-
-            return tasks[0].Result.Union(tasks[1].Result).OrderBy(x=>x.Key).ToDictionary(x => x.Key + offset, x => x.Value);
-        }
-
-        private static IDictionary<int, ListNode> DirectionExpandTree(this ListNode head, Direction direction = Direction.Down)
-        {
-            var result = new Dictionary<int, ListNode>();
-            var step = head;
-            var idx = 0;
-
-            while (step != null)
-            {
-                result.Add(idx, step);
-                switch (direction)
-                {
-                    case Direction.Down:
-                        step = step.Next != null ? step.Next : null;
-                        idx++;
-                        break;
-                    case Direction.Up:
-                        step = step.Previous != null ? step.Previous : null;
-                        idx--;
-                        break;
-                }
-            }
-
-            return result;
-        }
-
+        /// <summary>
+        /// Returns the dictionary of elements in a <see cref="ListNode"/>, starting from the passed element and moving through the list in the specified direction
+        /// </summary>
         private async static Task StepExpandTree(this ListNode head, ConcurrentDictionary<int, ListNode> dict, int index = 0, Direction direction = Direction.Down)
         {
             dict.TryAdd(index, head);
@@ -97,8 +65,12 @@ namespace ListSerializer
             }
         }
     }
+
     public static class ListSerializerExtension
     {
+        /// <summary>
+        /// Returns a list of <see cref="SerialiazedObject"/> that are ready for serialization/deserialization
+        /// </summary>
         public static IEnumerable<SerialiazedObject> ToSerializeData(this IDictionary<int, ListNode> data)
         {
             var defaultKeyVal = new KeyValuePair<int, ListNode>(-1, null);
@@ -128,6 +100,9 @@ namespace ListSerializer
             return result;
         }
 
+        /// <summary>
+        /// Returns the root of a linked list generated from a list ready for serialization/deserialization
+        /// </summary>
         public static ListNode ToListNodeData(this IEnumerable<SerialiazedObject> data)
         {
             var result = data

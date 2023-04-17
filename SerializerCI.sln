@@ -3,14 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InitData", "InitData", "{6760B32B-4527-4D57-9611-CEC1C45AEB61}"
-	ProjectSection(SolutionItems) = preProject
-		InitData\IListSerializer.cs = InitData\IListSerializer.cs
-		InitData\ListNode.cs = InitData\ListNode.cs
-		InitData\serializer.md = InitData\serializer.md
-		InitData\YourImplementation.cs = InitData\YourImplementation.cs
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListSerializer", "ListSerializer\ListSerializer.csproj", "{E1714295-A9D6-446C-A48D-306FA80B4C0C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListSerializer.Core", "ListSerializer.Core\ListSerializer.Core.csproj", "{4C285E9B-CDDA-4610-90FE-0625D17E3CF1}"
@@ -22,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 		README.MD = README.MD
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListSerializer.Benchmark", "ListSerializer.Benchmark\ListSerializer.Benchmark.csproj", "{92ECDDB3-3172-4B38-8CE6-79787937F5C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListSerializer.Benchmark", "ListSerializer.Benchmark\ListSerializer.Benchmark.csproj", "{92ECDDB3-3172-4B38-8CE6-79787937F5C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
