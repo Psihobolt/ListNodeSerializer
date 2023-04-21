@@ -1,6 +1,7 @@
 using AutoFixture;
 using FluentAssertions;
 using SerializerTests.Nodes;
+using System.Text;
 
 namespace ListSerializer.Tests
 {
@@ -84,6 +85,68 @@ namespace ListSerializer.Tests
             sut.Random = suts.Skip(1).First();
             sut.Next.Random = suts.First();
             sut.Next.Previous = sut;
+
+            var serializer = new ListSerializer();
+
+            // Act
+            var result = await serializer.DeepCopy(sut);
+
+            // Assert
+            result.ToFullString().Should().BeEquivalentTo(sut.ToFullString());
+        }
+
+        [Fact]
+        public async Task DeepCopy_NodeWithCycleLink_SameObject()
+        {
+            // Arrange
+            var fixture = new Fixture();
+
+            var suts = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(2);
+
+            var sut = suts.First();
+
+            sut.Next = suts.Skip(1).First();
+            sut.Random = suts.Skip(1).First();
+            sut.Next.Random = suts.First();
+            sut.Next.Previous = sut;
+            sut.Next.Next = suts.First();
+
+            var serializer = new ListSerializer();
+
+            // Act
+            var result = await serializer.DeepCopy(sut);
+
+            // Assert
+            result.ToFullString().Should().BeEquivalentTo(sut.ToFullString());
+        }
+
+        [Fact]
+        public async Task DeepCopy_NodeWithUnicodeSymbol_SameObject()
+        {
+            // Arrange
+            var fixture = new Fixture();
+
+            var suts = fixture
+                .Build<ListNode>()
+                .Without(x => x.Next)
+                .Without(x => x.Previous)
+                .Without(x => x.Random)
+                .CreateMany(2);
+
+            var sut = suts.First();
+
+            sut.Next = suts.Skip(1).First();
+            sut.Random = suts.Skip(1).First();
+            sut.Next.Random = suts.First();
+            sut.Next.Previous = sut;
+
+            // Inject in string unicode symbol
+            sut.Data = "Maths use \u03a0 (Pi) for calculations";
 
             var serializer = new ListSerializer();
 

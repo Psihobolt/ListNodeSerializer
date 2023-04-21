@@ -26,7 +26,7 @@ namespace ListSerializer.Benchmark
         private IEnumerable<SerialiazedObject> serializedObjects;
         private readonly IListSerializer serializer = new ListSerializer();
 
-        [Params(10, 100, 1000)]
+        [Params(1000, 10000, 100000)]
         public int Depth { get; set; }
 
         private ListNode GetTree(int depth)
@@ -58,8 +58,7 @@ namespace ListSerializer.Benchmark
         public void Setup()
         {
             head = GetTree(Depth);
-            var objects = head.ExpandTreeAsync().GetAwaiter().GetResult();
-            serializedObjects = objects.ToSerializeData();
+            var serializedObjects = head.ToSerializeData();
         }
 
         [Benchmark]

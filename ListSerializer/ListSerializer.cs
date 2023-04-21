@@ -1,7 +1,9 @@
 ﻿
 using SerializerTests.Interfaces;
 using SerializerTests.Nodes;
+using System.Net.Http.Json;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 
 namespace ListSerializer
@@ -18,33 +20,57 @@ namespace ListSerializer
 
     public class ListSerializer : IListSerializer
     {
-        public async Task<ListNode> DeepCopy(ListNode head)
+        public Task<ListNode> DeepCopy(ListNode head)
         {
-            var list = await head.ExpandTreeAsync();
-            return list.ToSerializeData().ToListNodeData();
+            return Task.FromResult(head.ToSerializeData().ToListNodeData());
         }
 
-        public async Task<ListNode> Deserialize(Stream s)
+        public Task<ListNode> Deserialize(Stream s)
+        {
+            s.Position = 0;
+            List<SerialiazedObject> data = new List<SerialiazedObject>();
+
+            using (var reader = new BinaryReader(s, Encoding.UTF8, false))
+            {
+                while (s.Position < s.Length)
+                {
+                    var obj = new SerialiazedObject() {
+                        id = reader.ReadInt32(),
+                        nextId = reader.ReadInt32(),
+                        prevId = reader.ReadInt32(),
+                        random = reader.ReadInt32()
+                    };
+
+                    var len = reader.ReadInt32();
+                    obj.data = reader.ReadChars(len);
+                    data.Add(obj);
+                }
+            }
+
+            return Task.FromResult(data.ToListNodeData());
+        }
+
+        public Task Serialize(ListNode head, Stream s)
         {
             s.Position = 0;
 
-            JsonSerializerOptions jsonOption = new() { IncludeFields = true };
+            var data = head.ToSerializeData();
 
-            var data = await JsonSerializer.DeserializeAsync<List<SerialiazedObject>>(s, jsonOption);
+            using (var writer = new BinaryWriter(s, Encoding.UTF8, true))
+            {
+                foreach (var item in data)
+                {
+                    writer.Write(item.id);
+                    writer.Write(item.nextId);
+                    writer.Write(item.prevId);
+                    writer.Write(item.random);
+                    writer.Write(item.data.Length);
+                    writer.Write(item.data);
+                    s.Flush();
+                }
+            }
 
-            return data?.ToListNodeData();
-        }
-
-        public async Task Serialize(ListNode head, Stream s)
-        {
-            s.Position = 0;
-
-            var node = await head.ExpandTreeAsync();
-            var data = node.ToSerializeData();
-
-            JsonSerializerOptions jsonOption = new() { IncludeFields = true };
-            await JsonSerializer.SerializeAsync(s, data, data.GetType(), jsonOption);
-            s.Flush();
+            return Task.CompletedTask;
         }
     }
 }
